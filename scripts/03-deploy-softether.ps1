@@ -1,10 +1,11 @@
-Write-Host "Descargando instalador de SoftEther VPN Server (50MB)..." -ForegroundColor Cyan
+Write-Host "Configurando TLS y descargando SoftEther VPN Server..." -ForegroundColor Cyan
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $Installer = "$env:TEMP\softether.exe"
-$Url = "https://www.softether-download.com/files/softether/v4.43-9799-beta-2023.06.30-tree/Windows/SoftEther_VPN_Server_and_VPN_Bridge/softether-vpnserver_vpnbridge-v4.43-9799-beta-2023.06.30-windows-x86_x64-intel.exe"
+$Url = "https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v4.43-9799-beta/softether-vpnserver_vpnbridge-v4.43-9799-beta-2023.06.30-windows-x86_x64-intel.exe"
 
-# Descarga directa con soporte de redirecciones
-curl.exe -L -k -A "Mozilla/5.0" -o $Installer $Url
+# Descarga robusta con PowerShell manejando redirecciones y TLS 1.2
+Invoke-WebRequest -Uri $Url -OutFile $Installer -MaximumRedirection 5
 
 $FileSize = (Get-Item $Installer -ErrorAction SilentlyContinue).Length
 
@@ -19,5 +20,5 @@ if ($FileSize -gt 10000000) {
     Write-Host "SoftEther VPN Server instalado y corriendo correctamente." -ForegroundColor Green
     Write-Host "==========================================================" -ForegroundColor Green
 } else {
-    Write-Host "Error: El archivo descargado esta incompleto o corrupto ($FileSize bytes)." -ForegroundColor Red
+    Write-Host "Error: El archivo descargado esta incompleto ($FileSize bytes)." -ForegroundColor Red
 }
