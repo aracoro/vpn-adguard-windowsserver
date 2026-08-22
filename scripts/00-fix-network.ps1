@@ -1,19 +1,20 @@
-Write-Host "Limpiando configuracion de red y asignando nueva IP estatica..." -ForegroundColor Cyan
+Write-Host "Desactivando DAD y forzando IP estatica 192.168.1.176..." -ForegroundColor Cyan
 
-# 1. Eliminar IPs IPv4 anteriores
-Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false
+# 1. Desactivar deteccion DAD para evitar conflictos falsos por Wi-Fi
+Set-NetIPInterface -InterfaceAlias "Ethernet" -AddressFamily IPv4 -DadTransmits 0
 
-# 2. Asignar nueva IP limpia para evitar conflicto DAD
-New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.220 -PrefixLength 24 -DefaultGateway 192.168.1.254
+# 2. Limpiar e inyectar IP estatica
+Remove-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4 -Confirm:$false -ErrorAction SilentlyContinue
+New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.176 -PrefixLength 24 -DefaultGateway 192.168.1.254 -SkipAsSource $false
 
 # 3. DNS de salida
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses ("1.1.1.1", "8.8.8.8")
 
-# 4. Desactivar Firewall para pruebas
+# 4. Apagar firewall
 netsh advfirewall set allprofiles state off
 
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "Verificando configuracion IP:" -ForegroundColor Green
+Write-Host "Estado actual de la interfaz:" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
 
 ipconfig
