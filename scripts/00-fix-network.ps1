@@ -1,23 +1,20 @@
-Write-Host "Limpiando rutas, IPs previas y configurando IP estatica..." -ForegroundColor Cyan
+Write-Host ">>> [Fix v3] Aplicando configuracion de red con netsh..." -ForegroundColor Cyan
 
-# 1. Limpiar rutas por defecto (Gateway) y direcciones IPv4 existentes
-Get-NetRoute -InterfaceAlias "Ethernet" -DestinationPrefix "0.0.0.0/0" -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetRoute -Confirm:$false
-Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false
+# 1. Desactivar colisiones DAD por Wi-Fi
+Set-NetIPInterface -InterfaceAlias "Ethernet" -AddressFamily IPv4 -DadTransmits 0 -ErrorAction SilentlyContinue
 
-# 2. Desactivar deteccion DAD para evitar bloqueos por Wi-Fi
-Set-NetIPInterface -InterfaceAlias "Ethernet" -AddressFamily IPv4 -DadTransmits 0
+# 2. Forzar IP estatica, mascara y Gateway de forma atomica
+netsh interface ipv4 set address name="Ethernet" source=static address=192.168.1.176 mask=255.255.255.0 gateway=192.168.1.254
 
-# 3. Asignar IP estatica y Puerta de enlace limpias
-New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.1.176 -PrefixLength 24 -DefaultGateway 192.168.1.254
+# 3. Asignar servidores DNS
+netsh interface ipv4 set dns name="Ethernet" source=static address=1.1.1.1
+netsh interface ipv4 add dns name="Ethernet" address=8.8.8.8 index=2
 
-# 4. Servidores DNS publicos
-Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses ("1.1.1.1", "8.8.8.8")
-
-# 5. Desactivar Firewall para el laboratorio
+# 4. Apagar firewall para el entorno de laboratorio
 netsh advfirewall set allprofiles state off
 
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "Configuracion aplicada con exito:" -ForegroundColor Green
+Write-Host "Configuracion aplicada. Validando tabla IP:" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
 
 ipconfig
